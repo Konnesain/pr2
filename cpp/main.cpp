@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <fstream>
 #include "crypto.h"
 #include "math.h"
@@ -297,32 +297,32 @@ int main()
             bigint A = 1256, B = 847, C = 119;
             auto cf = continuedFraction(A,B);
             cout << "Цепная дробь " << A << "/" << B << ": " << cf;
-            vector<bigint> P{1,0};
-            vector<bigint> Q{0,1};
-            for(int i = 0; i < cf.size(); i++)
+            vector<bigint> P{1, cf[0]};
+            vector<bigint> Q{0, 1};
+            for(int i = 1; i < cf.size(); i++)
             {
-                P.push_back(cf[i]*P[i+1] + P[i]);
-                Q.push_back(cf[i]*Q[i+1] + Q[i]);
+                P.push_back(cf[i]*P[i] + P[i-1]);
+                Q.push_back(cf[i]*Q[i] + Q[i-1]);
             }
             cout << "По цепной дроби восстанавливаем подходящие дроби P/Q\n";
             cout << "P: ";
-            for(int i = 2; i < P.size(); i++)
+            for(int i = 1; i < P.size(); i++)
                 cout << P[i] << " ";
             cout << "\nQ: ";
-            for(int i = 2; i < Q.size(); i++)
+            for(int i = 1; i < Q.size(); i++)
                 cout << Q[i] << " ";
             cout << "\n";
             bigint a,b;
             if(cf.size() % 2 == 0)
             {
-                a = P[P.size()-2];
-                b = -Q[Q.size()-2];
+                a = Q[Q.size()-2];
+                b = -P[P.size()-2];
                 cout << "Так как длина цепной дроби четная: a = " << a << ", b = " << b << "\n";
             }
             else
             {
-                a = -P[P.size()-2];
-                b = Q[Q.size()-2];
+                a = -Q[Q.size()-2];
+                b = P[P.size()-2];
                 cout << "Так как длина цепной дроби нечетная: a = " << a << ", b = " << b << "\n";
             }
             cout << "После домножения на " << C << " получаем решение: a = " << a*C << ", b = " << b*C << "\n";
