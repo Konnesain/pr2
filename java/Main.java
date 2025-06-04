@@ -304,34 +304,34 @@ public class Main
                     printContinuedFraction(cf);
                     ArrayList<BigInteger> P = new ArrayList<>();
                     P.add(BigInteger.ONE);
-                    P.add(BigInteger.ZERO);
+                    P.add(cf.get(0));
                     ArrayList<BigInteger> Q = new ArrayList<>();
                     Q.add(BigInteger.ZERO);
                     Q.add(BigInteger.ONE);
-                    for(int i = 0; i < cf.size(); i++)
+                    for(int i = 1; i < cf.size(); i++)
                     {
-                        P.add(cf.get(i).multiply(P.get(i+1)).add(P.get(i)));
-                        Q.add(cf.get(i).multiply(Q.get(i+1)).add(Q.get(i)));
+                        P.add(cf.get(i).multiply(P.get(i)).add(P.get(i-1)));
+                        Q.add(cf.get(i).multiply(Q.get(i)).add(Q.get(i-1)));
                     }
                     System.out.println("По цепной дроби восстанавливаем подходящие дроби P/Q");
                     System.out.print("P: ");
-                    for(int i = 2; i < P.size(); i++)
+                    for(int i = 1; i < P.size(); i++)
                         System.out.printf("%d ", P.get(i));
                     System.out.print("\nQ: ");
-                    for(int i = 2; i < Q.size(); i++)
+                    for(int i = 1; i < Q.size(); i++)
                         System.out.printf("%d ", Q.get(i));
                     System.out.println();
                     BigInteger a,b;
                     if(cf.size() % 2 == 0)
                     {
-                        a = P.get(P.size()-2);
-                        b = Q.get(Q.size()-2).negate();
+                        a = Q.get(Q.size()-2);
+                        b = P.get(P.size()-2).negate();
                         System.out.printf("Так как длина цепной дроби четная: a = %d, b = %d\n",a,b);
                     }
                     else
                     {
-                        a = P.get(P.size()-2).negate();
-                        b = Q.get(Q.size()-2);
+                        a = Q.get(Q.size()-2).negate();
+                        b = P.get(P.size()-2);
                         System.out.printf("Так как длина цепной дроби нечетная: a = %d, b = %d\n",a,b);
                     }
                     System.out.printf("После домножения на %d получаем решение: a = %d, b = %d\n",C,a.multiply(C),b.multiply(C));
