@@ -49,7 +49,7 @@ std::vector<std::pair<bigint, bigint>> encrypt(std::string msg, bigint publicKey
 	return encrypted;
 }
 
-std::string decrypt(std::vector<std::pair<bigint, bigint>> msg, bigint privateKey, bigint g, bigint p)
+std::string decrypt(std::vector<std::pair<bigint, bigint>> &msg, bigint privateKey, bigint g, bigint p)
 {
 	if (!isPrime(p))
 		throw std::invalid_argument("p не простое");
