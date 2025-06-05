@@ -1,6 +1,6 @@
 #include "math.h"
 
-bool isPrime(mpz_class a)
+bool isPrime(bigint a)
 {
     if (a == 2)
         return true;
