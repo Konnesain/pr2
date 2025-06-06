@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include <fstream>
 #include "crypto.h"
 #include "math.h"
@@ -194,41 +194,34 @@ int main()
             cout << "Введите файл для шифрования\n";
             string filename;
             cin >> filename;
+            cout << "Введите файл зашифрованного текста\n";
+            string encFilename;
+            cin >> encFilename;
             cout << "Введите открытый ключ для шифрования\n";
             bigint publicKey;
             cin >> publicKey;
-            ifstream ifs(filename);
+            ifstream ifs(filename, ifstream::binary);
             if (!ifs.is_open())
             {
-                cout << "Файл не существует\n";
+                cout << "Файл для шифрования не существует\n";
                 break;
             }
-            string str;
-            string file_contents;
-            getline(ifs, file_contents);
-            while (getline(ifs, str))
+            ofstream ofs(encFilename, ofstream::trunc | ofstream::binary);
+            if (!ofs.is_open())
             {
-                file_contents += "\n" + str;
+                cout << "Файл для зашифрованного текста не существует\n";
+                break;
             }
-            ifs.close();
-            ofstream ofs(filename, ofstream::trunc | ofstream::binary);
-            vector<pair<bigint, bigint>> encrypted;
             try
             {
-                encrypted = encrypt(file_contents, publicKey, g, p);
+                encryptFile(ifs, ofs, publicKey, g, p);
             }
             catch (invalid_argument e)
             {
                 cout << e.what() << "\n";
                 break;
             }
-            size_t size = encrypted.size();
-            ofs.write(reinterpret_cast<char*>(&size), sizeof(size));
-            for (auto s : encrypted)
-            {
-                writeBigIntToFile(s.first, ofs);
-                writeBigIntToFile(s.second, ofs);
-            }
+            ifs.close();
             ofs.close();
             cout << "Зашифровано\n";
             break;
@@ -241,52 +234,34 @@ int main()
             cout << "Введите файл для расфрования\n";
             string filename;
             cin >> filename;
+            cout << "Введите файл для расшифрованного текста\n";
+            string decFilename;
+            cin >> decFilename;
             cout << "Введите закрытый ключ для расшифрования\n";
             bigint privateKey;
             cin >> privateKey;
             ifstream ifs(filename, ifstream::binary);
             if (!ifs.is_open())
             {
-                cout << "Файл не существует\n";
+                cout << "Файл для расшифровнаия существует\n";
                 break;
             }
-            size_t size;
-            if (!ifs.read(reinterpret_cast<char*>(&size), sizeof(size)))
+            ofstream ofs(decFilename, ofstream::trunc | ofstream::binary);
+            if (!ofs.is_open())
             {
-                cout << "Проблема с файлом\n";
+                cout << "Файл для расшифрованного текста не существует\n";
                 break;
             }
-            vector<pair<bigint, bigint>> encrypted(size);
-            bool problem = false;
-            for (auto i = 0; i < size; i++)
-            {
-                try
-                {
-                    encrypted[i].first = readBigIntFromFile(ifs);
-                    encrypted[i].second = readBigIntFromFile(ifs);
-                }
-                catch(ios_base::failure e)
-                {
-                    cout << e.what() << "\n";
-                    problem = true;
-                    break;
-                }
-            }
-            ifs.close();
-            if(problem)
-                break;
-            ofstream ofs(filename, ofstream::trunc);
-            string decrypted;
             try
             {
-                decrypted = decrypt(encrypted, privateKey, g, p);
+                decryptFile(ifs,ofs, privateKey, g, p);
             }
             catch (invalid_argument e)
             {
                 cout << e.what() << "\n";
                 break;
             }
-            ofs << decrypted;
+            ifs.close();
             ofs.close();
             cout << "Расшифровано\n";
             break;
