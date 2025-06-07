@@ -1,8 +1,6 @@
 import java.io.*;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -104,7 +102,7 @@ public class Main
                     {
                         res = Math.powerMod(a, x, p);
                     }
-                    catch(Exception e)
+                    catch(IllegalArgumentException e)
                     {
                         System.out.println(e.getMessage());
                         break;
@@ -125,7 +123,7 @@ public class Main
                     {
                         res = Math.betterPowerMod(a, x, p);
                     }
-                    catch(Exception e)
+                    catch(IllegalArgumentException e)
                     {
                         System.out.println(e.getMessage());
                         break;
@@ -175,7 +173,7 @@ public class Main
                     {
                         publicKey = Crypto.generatePublicKey(privateKey,g,p);
                     }
-                    catch (Exception e)
+                    catch (IllegalArgumentException e)
                     {
                         System.out.println(e.getMessage());
                         break;
@@ -189,43 +187,28 @@ public class Main
                     BigInteger p = scanner.nextBigInteger(), g = scanner.nextBigInteger();
                     System.out.println("Введите файл для шифрования");
                     String filename = scanner.next();
+                    System.out.println("Введите файл для зашифрованного текста");
+                    String encFilename = scanner.next();
                     System.out.println("Введите открытый ключ для шифрования");
                     BigInteger publicKey = scanner.nextBigInteger();
-                    byte[] file_contents;
-                    try
+
+                    if(filename.equals(encFilename))
                     {
-                        file_contents = Files.readAllBytes(Paths.get(filename));
+                        System.out.println("Файлы не должны совпадать");
+                        break;
                     }
-                    catch (IOException e)
+                    try(DataInputStream ifs = new DataInputStream(new FileInputStream(filename)); DataOutputStream ofs = new DataOutputStream(new FileOutputStream(encFilename)))
                     {
-                        throw new RuntimeException(e);
+                        Crypto.encryptFile(ifs, ofs, publicKey, g, p);
                     }
-                    BigInteger[][] encrypted;
-                    try
-                    {
-                        encrypted = Crypto.encrypt(file_contents, publicKey, g, p);
-                    }
-                    catch (Exception e)
+                    catch (IllegalArgumentException e)
                     {
                         System.out.println(e.getMessage());
                         break;
                     }
-                    try(DataOutputStream ofs = new DataOutputStream(new FileOutputStream(filename)))
-                    {
-                        ofs.writeInt(encrypted.length);
-                        for(BigInteger[] s : encrypted)
-                        {
-                            byte[] bigInt = s[0].toByteArray();
-                            ofs.writeInt(bigInt.length);
-                            ofs.write(bigInt);
-                            bigInt = s[1].toByteArray();
-                            ofs.writeInt(bigInt.length);
-                            ofs.write(bigInt);
-                        }
-                    }
                     catch (FileNotFoundException e)
                     {
-                        System.out.println("Файл не существует");
+                        System.out.println("Файл не найден");
                         break;
                     }
                     catch (IOException e)
@@ -242,26 +225,28 @@ public class Main
                     BigInteger p = scanner.nextBigInteger(), g = scanner.nextBigInteger();
                     System.out.println("Введите файл для расшифрования");
                     String filename = scanner.next();
+                    System.out.println("Введите файл для расшифрованного текста");
+                    String decFilename = scanner.next();
                     System.out.println("Введите закрытый ключ для расшифрования");
                     BigInteger privateKey = scanner.nextBigInteger();
-                    BigInteger[][] encrypted;
-                    try(DataInputStream ifs = new DataInputStream(new FileInputStream(filename)))
+
+                    if(filename.equals(decFilename))
                     {
-                        int size = ifs.readInt();
-                        encrypted = new BigInteger[size][2];
-                        for(int i = 0; i < size; i++)
-                        {
-                            int bigIntSize = ifs.readInt();
-                            encrypted[i][0] = new BigInteger(ifs.readNBytes(bigIntSize));
-                            bigIntSize = ifs.readInt();
-                            if(bigIntSize < 0)
-                                System.out.println(1);
-                            encrypted[i][1] = new BigInteger(ifs.readNBytes(bigIntSize));
-                        }
+                        System.out.println("Файлы не должны совпадать");
+                        break;
+                    }
+                    try(DataInputStream ifs = new DataInputStream(new FileInputStream(filename)); DataOutputStream ofs = new DataOutputStream(new FileOutputStream(decFilename)))
+                    {
+                        Crypto.decryptFile(ifs, ofs, privateKey, g, p);
+                    }
+                    catch (IllegalArgumentException e)
+                    {
+                        System.out.println(e.getMessage());
+                        break;
                     }
                     catch (FileNotFoundException e)
                     {
-                        System.out.println("Файл не существует");
+                        System.out.println("Файл не найден");
                         break;
                     }
                     catch (IOException e)
@@ -269,29 +254,6 @@ public class Main
                         System.out.println("Проблема с файлом");
                         break;
                     }
-
-                    PrintWriter ofs;
-                    try
-                    {
-                        ofs = new PrintWriter(filename);
-                    }
-                    catch (FileNotFoundException e)
-                    {
-                        System.out.println("Файл не существует");
-                        break;
-                    }
-                    String decrypted;
-                    try
-                    {
-                        decrypted = Crypto.decrypt(encrypted, privateKey, g, p);
-                    }
-                    catch (Exception e)
-                    {
-                        System.out.println(e.getMessage());
-                        break;
-                    }
-                    ofs.print(decrypted);
-                    ofs.close();
                     System.out.println("Расшифровано");
                     break;
                 }
@@ -349,7 +311,7 @@ public class Main
                     {
                         alice.publicKey = Crypto.generatePublicKey(alice.privateKey, g, p);
                     }
-                    catch (Exception e)
+                    catch (IllegalArgumentException e)
                     {
                         throw new RuntimeException(e);
                     }
@@ -362,7 +324,7 @@ public class Main
                     {
                         eve.publicKey = Crypto.generatePublicKey(eve.privateKey, g, p);
                     }
-                    catch (Exception e)
+                    catch (IllegalArgumentException e)
                     {
                         throw new RuntimeException(e);
                     }
@@ -379,7 +341,7 @@ public class Main
                     {
                         originalEncryptedMessage = Crypto.encrypt(originalMessage.getBytes(StandardCharsets.UTF_8), bob.sendKey, g, p);
                     }
-                    catch (Exception e)
+                    catch (IllegalArgumentException e)
                     {
                         throw new RuntimeException(e);
                     }
@@ -390,7 +352,7 @@ public class Main
                     {
                         originalDecryptedMessage = Crypto.decrypt(originalEncryptedMessage, eve.privateKey, g, p);
                     }
-                    catch (Exception e)
+                    catch (IllegalArgumentException e)
                     {
                         throw new RuntimeException(e);
                     }
@@ -403,7 +365,7 @@ public class Main
                     {
                         newEncryptedMessage = Crypto.encrypt(newMessage.getBytes(StandardCharsets.UTF_8), eve.sendKey, g, p);
                     }
-                    catch (Exception e)
+                    catch (IllegalArgumentException e)
                     {
                         throw new RuntimeException(e);
                     }
@@ -414,7 +376,7 @@ public class Main
                     {
                         newDecryptedMessage = Crypto.decrypt(newEncryptedMessage, alice.privateKey, g, p);
                     }
-                    catch (Exception e)
+                    catch (IllegalArgumentException e)
                     {
                         throw new RuntimeException(e);
                     }

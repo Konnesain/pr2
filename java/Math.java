@@ -27,10 +27,10 @@ public class Math
         return (!a.mod(p).equals(BigInteger.valueOf(0))) && isPrime(p);
     }
 
-    public static BigInteger powerMod(BigInteger a, BigInteger x, BigInteger p) throws Exception
+    public static BigInteger powerMod(BigInteger a, BigInteger x, BigInteger p) throws IllegalArgumentException
     {
         if (p.compareTo(BigInteger.valueOf(0)) <= 0)
-            throw new Exception("Модуль не положительный");
+            throw new IllegalArgumentException("Модуль не положительный");
 
         BigInteger res = BigInteger.ONE;
         for (BigInteger i = BigInteger.ZERO; i.compareTo(x) < 0; i = i.add(BigInteger.ONE))
@@ -40,10 +40,10 @@ public class Math
         return res;
     }
 
-    public static BigInteger betterPowerMod(BigInteger a, BigInteger x, BigInteger p) throws Exception
+    public static BigInteger betterPowerMod(BigInteger a, BigInteger x, BigInteger p) throws IllegalArgumentException
     {
         if (p.compareTo(BigInteger.ZERO) <= 0)
-            throw new Exception("Модуль не положительный");
+            throw new IllegalArgumentException("Модуль не положительный");
 
         ArrayList<BigInteger> xi = new ArrayList<>();
         ArrayList<BigInteger> idk = new ArrayList<>(); //2^i
