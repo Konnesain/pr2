@@ -194,12 +194,18 @@ int main()
             cout << "Введите файл для шифрования\n";
             string filename;
             cin >> filename;
-            cout << "Введите файл зашифрованного текста\n";
+            cout << "Введите файл для зашифрованного текста\n";
             string encFilename;
             cin >> encFilename;
             cout << "Введите открытый ключ для шифрования\n";
             bigint publicKey;
             cin >> publicKey;
+
+            if(filename == encFilename)
+            {
+                cout << "Файлы не должны совпадать\n";
+                break;
+            }
             ifstream ifs(filename, ifstream::binary);
             if (!ifs.is_open())
             {
@@ -231,7 +237,7 @@ int main()
             cout << "Введите p и g\n";
             bigint p, g;
             cin >> p >> g;
-            cout << "Введите файл для расфрования\n";
+            cout << "Введите файл для расшифрования\n";
             string filename;
             cin >> filename;
             cout << "Введите файл для расшифрованного текста\n";
@@ -240,6 +246,12 @@ int main()
             cout << "Введите закрытый ключ для расшифрования\n";
             bigint privateKey;
             cin >> privateKey;
+
+            if(filename == decFilename)
+            {
+                cout << "Файлы не должны совпадать\n";
+                break;
+            }
             ifstream ifs(filename, ifstream::binary);
             if (!ifs.is_open())
             {

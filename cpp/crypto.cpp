@@ -6,6 +6,8 @@ bigint generatePublicKey(bigint privateKey, bigint g, bigint p)
 		throw std::invalid_argument("p не простое");
 	if (1 >= privateKey || privateKey >= p - 1)
 		throw std::invalid_argument("ключ не в диапазоне (1;p-1)");
+	if(1 >= g || g >= p-1)
+		throw std::invalid_argument("g не в диапазоне (1; p-1)");
 
 	return betterPowerMod(g, privateKey, p);
 }
@@ -27,11 +29,6 @@ std::pair<bigint, bigint> generateParameters()
 
 std::vector<std::pair<bigint, bigint>> encrypt(std::string msg, bigint publicKey, bigint g, bigint p)
 {
-	if (!isPrime(p))
-		throw std::invalid_argument("p не простое");
-	if (0 >= publicKey || publicKey >= p)
-		throw std::invalid_argument("ключ не в диапазоне (0;p)");
-
 	gmp_randclass rng(gmp_randinit_default);
     rng.seed(time(0));
 	
@@ -51,11 +48,6 @@ std::vector<std::pair<bigint, bigint>> encrypt(std::string msg, bigint publicKey
 
 std::string decrypt(std::vector<std::pair<bigint, bigint>> &msg, bigint privateKey, bigint g, bigint p)
 {
-	if (!isPrime(p))
-		throw std::invalid_argument("p не простое");
-	if (1 >= privateKey || privateKey >= p - 1)
-		throw std::invalid_argument("ключ не в диапазоне (1;p-1)");
-
 	std::string decrypted = "";
 	for (auto c : msg)
 	{
@@ -71,46 +63,35 @@ void encryptFile(std::ifstream &ifs, std::ofstream &ofs, bigint publicKey, bigin
 		throw std::invalid_argument("p не простое");
 	if (0 >= publicKey || publicKey >= p)
 		throw std::invalid_argument("ключ не в диапазоне (0;p)");
-
-	gmp_randclass rng(gmp_randinit_default);
-    rng.seed(time(0));
+	if(1 >= g || g >= p-1)
+		throw std::invalid_argument("g не в диапазоне (1; p-1)");
 	if(p <= 255)
 		throw std::invalid_argument("p слишком маленькое");
 	
-	size_t size = (mpz_sizeinbase(p.get_mpz_t(), 2) + 7) / 8-1; 
-	char *buf = new char[size];
+	size_t blockSize = (mpz_sizeinbase(p.get_mpz_t(), 2) + 7) / 8 - 1;
+	char buf[blockSize];
+	gmp_randclass rng(gmp_randinit_default);
+	rng.seed(time(0));
 	while (1)
 	{
-		ifs.read(reinterpret_cast<char*>(buf), size);
-		auto count = ifs.gcount();
-		if(count == 0)
+		ifs.read(reinterpret_cast<char*>(&buf), blockSize);
+		auto readen = ifs.gcount();
+		if(readen == 0)
 			break;
-		if(count < size)
+		if(readen < blockSize)
 		{
-			for(size_t i = count; i < size; i++)
+			for(size_t i = readen; i < blockSize; i++)
 				buf[i] = 0;
 		}
 		
 		bigint c;
-		mpz_import(c.get_mpz_t(), size, 1, 1, 1, 0, buf);
-		bigint a;
-		bigint b;
-		if(c != 0)
-		{
-			bigint k = rng.get_z_range(p) + 1;
-			a = betterPowerMod(g, k, p);
-			b = (betterPowerMod(publicKey, k, p) * c) % p;
-		}
-		else
-		{
-			a = 1;
-			b = 0;
-		}
-		std::cout << "i " << c << " a " << a << " b " << b << "\n";
+		mpz_import(c.get_mpz_t(), blockSize, 1, 1, 0, 0, &buf);
+		bigint k = rng.get_z_range(p) + 1;
+		bigint a = betterPowerMod(g, k, p);
+		bigint b = (betterPowerMod(publicKey, k, p) * c) % p;
 		writeBigIntToFile(a, ofs);
 		writeBigIntToFile(b, ofs);
 	}
-	delete[] buf;
 }
 
 void decryptFile(std::ifstream &ifs, std::ofstream &ofs, bigint privateKey, bigint g, bigint p)
@@ -119,12 +100,13 @@ void decryptFile(std::ifstream &ifs, std::ofstream &ofs, bigint privateKey, bigi
 		throw std::invalid_argument("p не простое");
 	if (1 >= privateKey || privateKey >= p - 1)
 		throw std::invalid_argument("ключ не в диапазоне (1;p-1)");
+	if(1 >= g || g >= p-1)
+		throw std::invalid_argument("g не в диапазоне (1; p-1)");
 	if(p <= 255)
 		throw std::invalid_argument("p слишком маленькое");
 	
-	size_t size = (mpz_sizeinbase(p.get_mpz_t(), 2) + 7) / 8-1; 
-
-	char *buf = new char[size];
+	size_t blockSize = (mpz_sizeinbase(p.get_mpz_t(), 2)+7) / 8 - 1;
+	char buf[blockSize];
 	bool exit = false;
 	while(1)
 	{
@@ -133,12 +115,11 @@ void decryptFile(std::ifstream &ifs, std::ofstream &ofs, bigint privateKey, bigi
 			bigint a = readBigIntFromFile(ifs);
 			bigint b = readBigIntFromFile(ifs);
 			bigint t = ((b * modInverse(betterPowerMod(a, privateKey, p), p)) % p);
-			std::cout << "d " << t << " a " << a << " b " << b << "\n";
-			size_t g;
-    		mpz_export(buf, &g, 1, 1, 1, 0, t.get_mpz_t());
-			if(g < size)
+			size_t decryptedSize;
+    		mpz_export(&buf, &decryptedSize, 1, 1, 0, 0, t.get_mpz_t());
+			if(decryptedSize < blockSize)
 			{
-				size_t zerosize = size-g;
+				size_t zerosize = blockSize-decryptedSize;
 				char zerobytes[zerosize];
 				for(int i = 0; i < zerosize; i++)
 				{
@@ -146,7 +127,7 @@ void decryptFile(std::ifstream &ifs, std::ofstream &ofs, bigint privateKey, bigi
 				}
 				ofs.write(reinterpret_cast<char*>(&zerobytes), zerosize);
 			}
-			ofs.write(buf, g);
+			ofs.write(reinterpret_cast<char*>(&buf), decryptedSize);
 		}
 		catch(std::ios_base::failure e)
 		{
@@ -157,5 +138,4 @@ void decryptFile(std::ifstream &ifs, std::ofstream &ofs, bigint privateKey, bigi
 			break;
 		}
 	}
-	delete[] buf;
 }
